@@ -1,0 +1,68 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum SchedulingStatus {
+  agendado
+  realizado
+  cancelado
+}
+
+model Student {
+  id           String   @id @default(uuid())
+  cpf          String   @unique
+  firstName    String
+  lastName     String
+  birthDate    DateTime @db.Date
+  cep          String
+  street       String
+  number       String
+  neighborhood String
+  city         String
+  state        String
+  phone        String
+  whatsapp     String
+  email        String
+  createdAt    DateTime @default(now()) @db.Date
+  updatedAt    DateTime @updatedAt
+
+  Scheduling Scheduling[]
+}
+
+model Teacher {
+  id        String   @id @default(uuid())
+  cpf       String   @unique
+  firstName String
+  lastName  String
+  birthDate DateTime @db.Date
+  status    String
+  expertise String?
+  createdAt DateTime @default(now()) @db.Date
+  updatedAt DateTime @updatedAt
+
+  Scheduling Scheduling[]
+}
+
+model Scheduling {
+  id        String           @id @default(uuid())
+  dateTime  DateTime
+  teacherId String
+  studentId String
+  content   String
+  status    SchedulingStatus
+  teacher   Teacher          @relation(fields: [teacherId], references: [id])
+  student   Student          @relation(fields: [studentId], references: [id])
+  createdAt DateTime         @default(now()) @db.Date
+  updatedAt DateTime         @updatedAt
+}
