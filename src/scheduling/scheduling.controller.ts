@@ -33,6 +33,7 @@ export class SchedulingController {
   @Post()
   async create(@Body() createSchedulingDto: CreateSchedulingDto) {
     const scheduling = await this.schedulingService.create(createSchedulingDto);
+
     if (!scheduling) {
       throw AppException.badRequest('Erro ao criar o agendamento');
     }

@@ -22,22 +22,12 @@ export class SchedulingService {
     const hoursUntilClass = differenceInHours(schedulingDate, new Date());
     if (hoursUntilClass < 24) {
       throw new BadRequestException(
-        'O agendamento deve ser feito com no mínimo 24 horas de antecedência',
+        'O agendamento deve ser feito ou alterado com no mínimo 24 horas de antecedência',
       );
     }
 
     // Verificar limite de aulas do professor no dia
     const teacherSchedulings = await this.prisma.scheduling.count({
-      where: {
-        teacherId,
-        dateTime: {
-          gte: startOfDay(schedulingDate),
-          lte: endOfDay(schedulingDate),
-        },
-        status: 'agendado',
-      },
-    });
-    const schedulingConflict = await this.prisma.scheduling.findFirst({
       where: {
         teacherId,
         dateTime: {
@@ -53,6 +43,16 @@ export class SchedulingService {
         'O professor já possui 2 aulas agendadas neste dia',
       );
     }
+
+    const schedulingConflict = await this.prisma.scheduling.findFirst({
+      where: {
+        teacherId,
+        dateTime: {
+          equals: schedulingDate,
+        },
+        status: 'agendado',
+      },
+    });
 
     if (schedulingConflict) {
       throw new ConflictException('Já existe um agendamento para esse horário');
@@ -84,7 +84,8 @@ export class SchedulingService {
 
     // Validar se ainda é possível editar (24h antes)
     const hoursUntilClass = differenceInHours(scheduling.dateTime, new Date());
-    if (hoursUntilClass < 24) {
+
+    if (hoursUntilClass > 0 && hoursUntilClass < 24) {
       throw new ForbiddenException(
         'Não é possível editar agendamentos com menos de 24 horas de antecedência',
       );
@@ -95,9 +96,9 @@ export class SchedulingService {
       const newDate = new Date(updateSchedulingDto.dateTime);
       const hoursUntilNewClass = differenceInHours(newDate, new Date());
 
-      if (hoursUntilNewClass < 24) {
+      if (hoursUntilNewClass > 0 && hoursUntilNewClass < 24) {
         throw AppException.badRequest(
-          'O agendamento deve ser feito com no mínimo 24 horas de antecedência',
+          'O agendamento deve ser feito ou alterado com no mínimo 24 horas de antecedência',
         );
       }
 
@@ -165,7 +166,7 @@ export class SchedulingService {
         },
         orderBy: { dateTime: 'asc' },
       });
-      console.log({ schedulings });
+
       if (!schedulings) {
         return [];
       }

@@ -1,0 +1,8 @@
+-- AlterTable
+ALTER TABLE "Scheduling" ALTER COLUMN "createdAt" SET DATA TYPE TIMESTAMP(3);
+
+-- AlterTable
+ALTER TABLE "Student" ALTER COLUMN "createdAt" SET DATA TYPE TIMESTAMP(3);
+
+-- AlterTable
+ALTER TABLE "Teacher" ALTER COLUMN "createdAt" SET DATA TYPE TIMESTAMP(3);

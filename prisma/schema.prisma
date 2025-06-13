@@ -34,7 +34,7 @@ model Student {
   phone        String
   whatsapp     String
   email        String
-  createdAt    DateTime @default(now()) @db.Date
+  createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   Scheduling Scheduling[]
@@ -48,7 +48,7 @@ model Teacher {
   birthDate DateTime @db.Date
   status    String
   expertise String?
-  createdAt DateTime @default(now()) @db.Date
+  createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   Scheduling Scheduling[]
@@ -63,6 +63,6 @@ model Scheduling {
   status    SchedulingStatus
   teacher   Teacher          @relation(fields: [teacherId], references: [id])
   student   Student          @relation(fields: [studentId], references: [id])
-  createdAt DateTime         @default(now()) @db.Date
+  createdAt DateTime         @default(now())
   updatedAt DateTime         @updatedAt
 }
