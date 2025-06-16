@@ -24,7 +24,9 @@ export class TeacherService {
   }
 
   async findAll(): Promise<Teacher[]> {
-    return await this.prisma.teacher.findMany();
+    return await this.prisma.teacher.findMany({
+      where: { status: 'active' },
+    });
   }
 
   async findOne(id: string): Promise<Teacher | null> {

@@ -32,7 +32,7 @@ export class SchedulingService {
     if (!teacher) {
       throw new BadRequestException('Professor não encontrado');
     }
-    if (teacher.status === 'inativo') {
+    if (teacher.status === 'inactive') {
       throw new BadRequestException('Professor está inativo');
     }
     // Verificar limite de aulas do professor no dia
