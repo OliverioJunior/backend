@@ -25,7 +25,16 @@ export class SchedulingService {
         'O agendamento deve ser feito ou alterado com no mínimo 24 horas de antecedência',
       );
     }
+    const teacher = await this.prisma.teacher.findUnique({
+      where: { id: teacherId },
+    });
 
+    if (!teacher) {
+      throw new BadRequestException('Professor não encontrado');
+    }
+    if (teacher.status === 'inativo') {
+      throw new BadRequestException('Professor está inativo');
+    }
     // Verificar limite de aulas do professor no dia
     const teacherSchedulings = await this.prisma.scheduling.count({
       where: {
@@ -164,7 +173,7 @@ export class SchedulingService {
           teacher: true,
           student: true,
         },
-        orderBy: { dateTime: 'asc' },
+        orderBy: { status: 'asc' },
       });
 
       if (!schedulings) {
@@ -182,7 +191,7 @@ export class SchedulingService {
         teacher: true,
         student: true,
       },
-      orderBy: { dateTime: 'asc' },
+      orderBy: { status: 'asc' },
     });
   }
   async findOne(id: string) {
