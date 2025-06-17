@@ -26,6 +26,13 @@ export class TeacherService {
   async findAll(): Promise<Teacher[]> {
     return await this.prisma.teacher.findMany({
       where: { status: 'active' },
+      include: {
+        Scheduling: {
+          where: {
+            status: 'agendado',
+          },
+        },
+      },
     });
   }
 
