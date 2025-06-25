@@ -10,7 +10,7 @@ import {
 import { SchedulingService } from './scheduling.service';
 import { CreateSchedulingDto } from './dto/create-scheduling.dto';
 import { UpdateSchedulingDto } from './dto/update-scheduling.dto';
-import { AppException } from 'src/common/exceptions/app.exception';
+import { AppException } from '../common/exceptions/app.exception';
 
 @Controller('scheduling')
 export class SchedulingController {

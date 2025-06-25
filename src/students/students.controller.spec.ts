@@ -199,7 +199,7 @@ describe('StudentsController', () => {
 
       const result = await studentsController.update(studentId, updateData);
 
-      expect(result).toEqual(expect.objectContaining(updateData));
+      expect(result).toEqual(expect.objectContaining(updateData).data);
       expect(mockPrismaService.student.update).toHaveBeenCalledWith({
         where: { id: studentId },
         data: updateData,

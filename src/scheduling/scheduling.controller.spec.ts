@@ -35,10 +35,48 @@ describe('SchedulingController', () => {
       };
 
       const spy = jest.spyOn(service, 'create');
-
+      (service.create as jest.Mock).mockResolvedValueOnce({
+        id: '1',
+        status: 'agendado',
+        dateTime: new Date('2024-03-15T10:00:00Z'),
+        content: 'Aula de matemática',
+        studentId: 'student-1',
+        teacherId: 'teacher-1',
+        student: {
+          birthDate: new Date('2000-01-01'),
+          firstName: 'John',
+          lastName: 'Doe',
+          phone: '123456789',
+          email: 'EMAIL',
+          cep: 'CEP',
+          city: 'CIDADE',
+          state: 'ESTADO',
+          street: 'RUA',
+          number: '123',
+          cpf: 'CPF',
+          createdAt: expect.any(Date),
+          updatedAt: expect.any(Date),
+          whatsapp: 'WHATSAPP',
+          id: 'student-1',
+          neighborhood: 'BAIRRO',
+        },
+        teacher: {
+          id: 'teacher-1',
+          firstName: 'John',
+          lastName: 'Doe',
+          cpf: '12345678901',
+          expertise: 'Matemática',
+          status: 'ativo',
+          birthDate: new Date('1990-01-01'),
+          updatedAt: expect.any(Date),
+          createdAt: expect.any(Date),
+        },
+        createdAt: expect.any(Date),
+        updatedAt: expect.any(Date),
+      });
       const result = await controller.create(dto);
       expect(spy).toHaveBeenCalled();
-      expect(result).toEqual({
+      expect(result.data).toEqual({
         id: '1',
         status: 'agendado',
         dateTime: new Date('2024-03-15T10:00:00Z'),

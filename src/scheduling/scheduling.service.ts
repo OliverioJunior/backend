@@ -8,78 +8,85 @@ import { PrismaService } from '../infra/database/prisma.service';
 import { CreateSchedulingDto } from './dto/create-scheduling.dto';
 import { UpdateSchedulingDto } from './dto/update-scheduling.dto';
 import { differenceInHours, startOfDay, endOfDay } from 'date-fns';
-import { AppException } from 'src/common/exceptions/app.exception';
+import { AppException } from '../common/exceptions/app.exception';
 
 @Injectable()
 export class SchedulingService {
   constructor(private prisma: PrismaService) {}
 
   async create(createSchedulingDto: CreateSchedulingDto) {
-    const { dateTime, teacherId, studentId, content } = createSchedulingDto;
-    const schedulingDate = new Date(dateTime);
+    try {
+      const { dateTime, teacherId, studentId, content } = createSchedulingDto;
+      const schedulingDate = new Date(dateTime);
 
-    // Validar antecedência mínima de 24 horas
-    const hoursUntilClass = differenceInHours(schedulingDate, new Date());
-    if (hoursUntilClass < 24) {
-      throw new BadRequestException(
-        'O agendamento deve ser feito ou alterado com no mínimo 24 horas de antecedência',
-      );
-    }
-    const teacher = await this.prisma.teacher.findUnique({
-      where: { id: teacherId },
-    });
+      // Validar antecedência mínima de 24 horas
+      const hoursUntilClass = differenceInHours(schedulingDate, new Date());
 
-    if (!teacher) {
-      throw new BadRequestException('Professor não encontrado');
-    }
-    if (teacher.status === 'inactive') {
-      throw new BadRequestException('Professor está inativo');
-    }
-    // Verificar limite de aulas do professor no dia
-    const teacherSchedulings = await this.prisma.scheduling.count({
-      where: {
-        teacherId,
-        dateTime: {
-          gte: startOfDay(schedulingDate),
-          lte: endOfDay(schedulingDate),
+      if (hoursUntilClass < 24) {
+        throw new BadRequestException(
+          'O agendamento deve ser feito ou alterado com no mínimo 24 horas de antecedência',
+        );
+      }
+      const teacher = await this.prisma.teacher.findUnique({
+        where: { id: teacherId },
+      });
+
+      if (!teacher) {
+        throw new BadRequestException('Professor não encontrado');
+      }
+      if (teacher.status === 'inactive') {
+        throw new BadRequestException('Professor está inativo');
+      }
+      // Verificar limite de aulas do professor no dia
+      const teacherSchedulings = await this.prisma.scheduling.count({
+        where: {
+          teacherId,
+          dateTime: {
+            gte: startOfDay(schedulingDate),
+            lte: endOfDay(schedulingDate),
+          },
+          status: 'agendado',
         },
-        status: 'agendado',
-      },
-    });
+      });
 
-    if (teacherSchedulings >= 2) {
-      throw new ConflictException(
-        'O professor já possui 2 aulas agendadas neste dia',
-      );
-    }
+      if (teacherSchedulings >= 2) {
+        throw new ConflictException(
+          'O professor já possui 2 aulas agendadas neste dia',
+        );
+      }
 
-    const schedulingConflict = await this.prisma.scheduling.findFirst({
-      where: {
-        teacherId,
-        dateTime: {
-          equals: schedulingDate,
+      const schedulingConflict = await this.prisma.scheduling.findFirst({
+        where: {
+          teacherId,
+          dateTime: {
+            equals: schedulingDate,
+          },
+          status: 'agendado',
         },
-        status: 'agendado',
-      },
-    });
+      });
 
-    if (schedulingConflict) {
-      throw new ConflictException('Já existe um agendamento para esse horário');
+      if (schedulingConflict) {
+        throw new ConflictException(
+          'Já existe um agendamento para esse horário',
+        );
+      }
+
+      return await this.prisma.scheduling.create({
+        data: {
+          dateTime: schedulingDate,
+          teacherId,
+          studentId,
+          content,
+          status: 'agendado',
+        },
+        include: {
+          teacher: true,
+          student: true,
+        },
+      });
+    } catch (error) {
+      console.error({ error });
     }
-
-    return await this.prisma.scheduling.create({
-      data: {
-        dateTime: schedulingDate,
-        teacherId,
-        studentId,
-        content,
-        status: 'agendado',
-      },
-      include: {
-        teacher: true,
-        student: true,
-      },
-    });
   }
 
   async update(id: string, updateSchedulingDto: UpdateSchedulingDto) {
