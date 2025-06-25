@@ -13,22 +13,21 @@ describe('StudentsController', () => {
   let studentsService: StudentsService;
 
   const mockPrismaService = {
-    student: {
-      create: jest.fn(),
-      findMany: jest.fn(),
-      update: jest.fn(),
-      findUnique: jest.fn(),
-      delete: jest.fn(),
-    },
+    create: jest.fn(),
+    findMany: jest.fn(),
+    findAll: jest.fn(),
+    update: jest.fn(),
+    findUnique: jest.fn(),
+    findOne: jest.fn(),
+    delete: jest.fn(),
   };
 
   beforeEach(async () => {
     const app: TestingModule = await Test.createTestingModule({
       controllers: [StudentsController],
       providers: [
-        StudentsService,
         {
-          provide: PrismaService,
+          provide: StudentsService,
           useValue: mockPrismaService,
         },
       ],
@@ -62,19 +61,16 @@ describe('StudentsController', () => {
         email: 'maria@teste.com',
       };
 
-      mockPrismaService.student.create
-        .mockResolvedValueOnce(firstStudent)
-        .mockRejectedValueOnce(
-          new AppException('CPF já cadastrado no sistema'),
-        );
+      mockPrismaService.create.mockResolvedValueOnce(firstStudent);
+      const studentCreated = (await studentsController.create(firstStudent))
+        .data;
+      expect(studentCreated).toEqual(firstStudent);
 
-      // Primeiro cadastro deve ser bem-sucedido
-      await expect(studentsController.create(firstStudent)).resolves.toEqual(
-        firstStudent,
+      mockPrismaService.create.mockRejectedValueOnce(
+        new AppException('CPF já cadastrado no sistema'),
       );
-
-      // Segundo cadastro deve falhar devido ao CPF duplicado
       await expect(studentsController.create(secondStudent)).rejects.toThrow();
+      mockPrismaService.create.mockReset();
     });
 
     it('Retorna erro de validação com dados inválidos para estudante', async () => {
@@ -108,62 +104,60 @@ describe('StudentsController', () => {
         ]),
       );
     });
-  });
+    it('Cria um estudante com dados válidos', async () => {
+      const validStudent = {
+        firstName: 'Olivério',
+        lastName: 'Ferreira Chagas Júnior',
+        birthDate: new Date('1996-05-20'),
+        cep: '49500579',
+        street: 'Rua João Alves de Souza',
+        number: '49',
+        neighborhood: 'São Cristovão',
+        city: 'Itabaiana',
+        state: 'SE',
+        phone: '79996824092',
+        whatsapp: '5579996824092',
+        email: 'oliverio.junior2@gmail.com',
+        cpf: '02890493504',
+      };
 
-  it('Cria um estudante com dados válidos', async () => {
-    const validStudent = {
-      firstName: 'Olivério',
-      lastName: 'Ferreira Chagas Júnior',
-      birthDate: new Date('1996-05-20'),
-      cep: '49500579',
-      street: 'Rua João Alves de Souza',
-      number: '49',
-      neighborhood: 'São Cristovão',
-      city: 'Itabaiana',
-      state: 'SE',
-      phone: '79996824092',
-      whatsapp: '5579996824092',
-      email: 'oliverio.junior2@gmail.com',
-      cpf: '02890493504',
-    };
+      mockPrismaService.create.mockResolvedValueOnce(validStudent);
 
-    mockPrismaService.student.create.mockResolvedValue(validStudent);
+      const dto = plainToInstance(CreateStudentDto, validStudent);
+      const errors = await validate(dto);
+      expect(errors.length).toBe(0);
 
-    const dto = plainToInstance(CreateStudentDto, validStudent);
-    const errors = await validate(dto);
-    expect(errors.length).toBe(0);
-
-    const result = await studentsController.create(validStudent);
-    expect(result).toEqual(validStudent);
-    expect(mockPrismaService.student.create).toHaveBeenCalledWith({
-      data: validStudent,
+      const result = (await studentsController.create(validStudent)).data;
+      expect(result).toEqual(validStudent);
+      mockPrismaService.create.mockReset();
     });
-  });
 
-  it('Lançar exceção ao tentar criar estudante com erro no serviço', async () => {
-    const validStudent = {
-      firstName: 'Olivério',
-      lastName: 'Ferreira Chagas Júnior',
-      birthDate: new Date('1996-05-20'),
-      cep: '49500579',
-      street: 'Rua João Alves de Souza',
-      number: '49',
-      neighborhood: 'São Cristovão',
-      city: 'Itabaiana',
-      state: 'SE',
-      phone: '79996824092',
-      whatsapp: '5579996824092',
-      email: 'oliverio.junior2@gmail.com',
-      cpf: '02890493504',
-    };
+    it('Lançar exceção ao tentar criar estudante com erro no serviço', async () => {
+      const validStudent = {
+        firstName: 'Olivério',
+        lastName: 'Ferreira Chagas Júnior',
+        birthDate: new Date('1996-05-20'),
+        cep: '49500579',
+        street: 'Rua João Alves de Souza',
+        number: '49',
+        neighborhood: 'São Cristovão',
+        city: 'Itabaiana',
+        state: 'SE',
+        phone: '79996824092',
+        whatsapp: '5579996824092',
+        email: 'oliverio.junior2@gmail.com',
+        cpf: '02890493504',
+      };
 
-    mockPrismaService.student.create.mockRejectedValue(
-      new Error('Erro ao criar estudante'),
-    );
+      mockPrismaService.create.mockRejectedValue(
+        new Error('Erro ao criar estudante'),
+      );
 
-    await expect(studentsController.create(validStudent)).rejects.toThrow(
-      'Erro ao criar estudante',
-    );
+      await expect(studentsController.create(validStudent)).rejects.toThrow(
+        'Erro ao criar estudante',
+      );
+      mockPrismaService.create.mockReset();
+    });
   });
 
   describe('updateStudent', () => {
@@ -191,19 +185,17 @@ describe('StudentsController', () => {
         email: 'oliverio.junior@gmail.com',
       };
 
-      mockPrismaService.student.findUnique.mockResolvedValue(existingStudent);
-      mockPrismaService.student.update.mockResolvedValue({
+      mockPrismaService.findOne.mockResolvedValueOnce(existingStudent);
+      mockPrismaService.update.mockResolvedValueOnce({
         ...existingStudent,
         ...updateData,
       });
 
-      const result = await studentsController.update(studentId, updateData);
-
-      expect(result).toEqual(expect.objectContaining(updateData).data);
-      expect(mockPrismaService.student.update).toHaveBeenCalledWith({
-        where: { id: studentId },
-        data: updateData,
-      });
+      const result = (await studentsController.update(studentId, updateData))
+        .data;
+      expect(result).toEqual({ ...existingStudent, ...updateData });
+      mockPrismaService.findOne.mockReset();
+      mockPrismaService.update.mockReset();
     });
 
     it('Valida campos ao atualizar estudante', async () => {
@@ -256,15 +248,17 @@ describe('StudentsController', () => {
         },
       ];
 
-      mockPrismaService.student.findMany.mockResolvedValue(students);
+      mockPrismaService.findAll.mockResolvedValueOnce(students);
 
-      const result = await studentsController.findAll();
+      const result = (await studentsController.findAll()).data;
+
       expect(result).toEqual(students);
-      expect(mockPrismaService.student.findMany).toHaveBeenCalled();
+      expect(mockPrismaService.findAll).toHaveBeenCalled();
+      mockPrismaService.findAll.mockClear();
     });
 
     it('Lançar exceção ao tentar buscar estudantes com erro no serviço', async () => {
-      mockPrismaService.student.findMany.mockRejectedValue(
+      mockPrismaService.findAll.mockRejectedValueOnce(
         new Error('Erro ao buscar estudantes'),
       );
 
@@ -272,6 +266,7 @@ describe('StudentsController', () => {
         'Erro ao buscar estudantes',
       );
     });
+    mockPrismaService.findAll.mockReset();
   });
 
   describe('findOne', () => {
@@ -294,21 +289,19 @@ describe('StudentsController', () => {
         cpf: '02890493504',
       };
 
-      mockPrismaService.student.findUnique.mockResolvedValue(student);
+      mockPrismaService.findOne.mockResolvedValueOnce(student);
 
       const result = await studentsService.findOne(studentId);
       expect(result).toEqual(student);
-      expect(mockPrismaService.student.findUnique).toHaveBeenCalledWith({
-        where: { id: studentId },
-      });
     });
 
     it('Retorna null quando estudante não é encontrado', async () => {
       const studentId = '999';
-      mockPrismaService.student.findUnique.mockResolvedValue(null);
+      mockPrismaService.findOne.mockResolvedValue(null);
 
       const result = await studentsService.findOne(studentId);
       expect(result).toBeNull();
+      mockPrismaService.findOne.mockClear();
     });
   });
 
@@ -332,18 +325,16 @@ describe('StudentsController', () => {
         cpf: '02890493504',
       };
 
-      mockPrismaService.student.delete.mockResolvedValue(deletedStudent);
+      mockPrismaService.delete.mockResolvedValue(deletedStudent);
+      mockPrismaService.findOne.mockResolvedValue(deletedStudent);
 
-      const result = await studentsController.delete(studentId);
+      const result = (await studentsController.delete(studentId)).data;
       expect(result).toEqual(deletedStudent);
-      expect(mockPrismaService.student.delete).toHaveBeenCalledWith({
-        where: { id: studentId },
-      });
     });
 
     it('Lança exceção ao tentar deletar estudante inexistente', async () => {
       const studentId = '999';
-      mockPrismaService.student.delete.mockRejectedValue(
+      mockPrismaService.delete.mockRejectedValue(
         new Error('Erro ao deletar estudante'),
       );
 

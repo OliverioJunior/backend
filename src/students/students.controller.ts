@@ -66,6 +66,7 @@ export class StudentsController {
   ): Promise<{ status: number; message: string; data: Student }> {
     try {
       const studentCreated = await this.studentsService.create(student);
+
       return {
         status: HttpStatus.CREATED,
         message: 'Estudante criado com sucesso',
@@ -118,7 +119,6 @@ export class StudentsController {
         data: studentDeleted,
       };
     } catch (error) {
-      console.error(error);
       if (error instanceof AppException) throw error;
       throw AppException.badRequest('Erro ao deletar estudante', error);
     }

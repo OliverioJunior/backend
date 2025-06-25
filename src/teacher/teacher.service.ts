@@ -64,6 +64,7 @@ export class TeacherService {
       if (teacher.status === 'inactive') {
         throw new AppException('Professor já está inativo');
       }
+
       const teacherDeleted = await this.prisma.teacher.update({
         where: { id },
         data: {

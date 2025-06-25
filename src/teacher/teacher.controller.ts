@@ -87,11 +87,13 @@ export class TeacherController {
   ): Promise<{ status: number; message: string; data: Teacher }> {
     try {
       const teacher = await this.teacherService.findOne(id);
+
       if (!teacher) {
         throw AppException.notFound('Professor não encontrado para deletar');
       }
 
       const teacherDeleted = await this.teacherService.delete(id);
+
       if (!teacherDeleted) {
         throw AppException.badRequest('Erro ao deletar o professor');
       }
