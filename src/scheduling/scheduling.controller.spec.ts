@@ -118,62 +118,42 @@ describe('SchedulingController', () => {
       expect(service.create).toHaveBeenCalledWith(dto);
     });
 
-    //   it('deve lidar com estudante menor de 16 anos', async () => {
-    //     const dto: CreateSchedulingDto = {
-    //       dateTime: '2024-03-20T10:00:00Z',
-    //       teacherId: 'teacher-1',
-    //       studentId: 'student-1',
-    //       content: 'Aula de matemática',
-    //     };
+    it('deve retornar erro 400 por antecedência insuficiente', async () => {
+      const dto: CreateSchedulingDto = {
+        dateTime: new Date(Date.now() + 23 * 60 * 60 * 1000).toISOString(),
+        teacherId: 'teacher-1',
+        studentId: 'student-1',
+        content: 'Aula inválida',
+      };
 
-    //     jest.spyOn(service, 'create').mockResolvedValueOnce({
-    //       ...dto,
-    //       id: '1',
-    //       status: 'agendado',
-    //       dateTime: new Date(dto.dateTime),
-    //       student: { birthDate: new Date('2010-01-01') },
-    //     });
+      jest
+        .spyOn(service, 'create')
+        .mockRejectedValueOnce(
+          new BadRequestException(
+            'O agendamento deve ser feito com no mínimo 24 horas de antecedência',
+          ),
+        );
 
-    //     const result = await controller.create(dto);
-    //     expect(result.student).toHaveProperty('birthDate');
-    //   });
+      await expect(controller.create(dto)).rejects.toThrow(BadRequestException);
+    });
 
-    //   it('deve retornar erro 400 por antecedência insuficiente', async () => {
-    //     const dto: CreateSchedulingDto = {
-    //       dateTime: new Date(Date.now() + 23 * 60 * 60 * 1000).toISOString(),
-    //       teacherId: 'teacher-1',
-    //       studentId: 'student-1',
-    //       content: 'Aula inválida',
-    //     };
+    it('deve retornar erro 409 por limite de agendamentos do professor', async () => {
+      const dto: CreateSchedulingDto = {
+        dateTime: '2024-03-20T10:00:00Z',
+        teacherId: 'teacher-1',
+        studentId: 'student-1',
+        content: 'Aula de português',
+      };
 
-    //     jest
-    //       .spyOn(service, 'create')
-    //       .mockRejectedValueOnce(
-    //         new BadRequestException(
-    //           'O agendamento deve ser feito com no mínimo 24 horas de antecedência',
-    //         ),
-    //       );
+      jest
+        .spyOn(service, 'create')
+        .mockRejectedValueOnce(
+          new ConflictException(
+            'O professor já possui 2 aulas agendadas neste dia',
+          ),
+        );
 
-    //     await expect(controller.create(dto)).rejects.toThrow(BadRequestException);
-    //   });
-
-    //   it('deve retornar erro 409 por limite de agendamentos do professor', async () => {
-    //     const dto: CreateSchedulingDto = {
-    //       dateTime: '2024-03-20T10:00:00Z',
-    //       teacherId: 'teacher-1',
-    //       studentId: 'student-1',
-    //       content: 'Aula de português',
-    //     };
-
-    //     jest
-    //       .spyOn(service, 'create')
-    //       .mockRejectedValueOnce(
-    //         new ConflictException(
-    //           'O professor já possui 2 aulas agendadas neste dia',
-    //         ),
-    //       );
-
-    //     await expect(controller.create(dto)).rejects.toThrow(ConflictException);
-    //   });
+      await expect(controller.create(dto)).rejects.toThrow(ConflictException);
+    });
   });
 });
