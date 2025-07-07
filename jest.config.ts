@@ -10,6 +10,8 @@ const config: Config.InitialOptions = {
   },
   collectCoverageFrom: ['**/*.(t|j)s'],
   coverageDirectory: '../coverage',
+  coveragePathIgnorePatterns: ['/node_modules/', '.*\\.module\\.ts$'],
+  coverageReporters: ['html', 'text-summary'],
   testEnvironment: 'node',
   setupFiles: ['reflect-metadata'],
 };
