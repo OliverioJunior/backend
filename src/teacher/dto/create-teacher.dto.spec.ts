@@ -1,6 +1,7 @@
 import { validate } from 'class-validator';
 import { CreateTeacherDto } from './create-teacher.dto';
 import { testCases, TTestCase } from '../../common/test-utils';
+import { plainToInstance } from 'class-transformer';
 
 describe('CreateTeacherDto', () => {
   let dto: CreateTeacherDto;
@@ -59,6 +60,20 @@ describe('CreateTeacherDto', () => {
       valueCheck(errors[0].value);
     },
   );
+
+  it('Transforma birthDate em uma instância de Date', async () => {
+    const plainObject = {
+      cpf: '12345678909',
+      firstName: 'João',
+      lastName: 'Silva',
+      birthDate: '2000-01-01',
+      status: 'active',
+      expertise: 'Matemática',
+    };
+    const dto = plainToInstance(CreateTeacherDto, plainObject);
+    expect(dto.birthDate).toBeInstanceOf(Date);
+    expect(dto.birthDate.toISOString()).toBe('2000-01-01T00:00:00.000Z');
+  });
   it.each<TTestCase>(testCases())(
     `Falha quando 'status' estiver $desc`,
     async ({ value, constraint, valueCheck }) => {
